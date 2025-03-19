@@ -97,8 +97,8 @@ pub struct FarmState {
     pub deposit_warmup_period: u32,
     pub withdrawal_cooldown_period: u32,
 
-    pub total_active_stake_scaled: u128,
-    pub total_pending_stake_scaled: u128,
+    pub total_active_stake_scaled:  [u8; 16],
+    pub total_pending_stake_scaled:  [u8; 16],
 
     pub total_pending_amount: u64,
 
@@ -127,20 +127,29 @@ pub struct FarmState {
 }
 
 impl FarmState {
+
+    pub fn get_total_active_stake_scaled(&self) -> u128 {
+        u128::from_le_bytes(self.total_active_stake_scaled)
+    }
+
+    pub fn get_total_pending_stake_scaled(&self) -> u128 {
+        u128::from_le_bytes(self.total_pending_stake_scaled)
+    }
+
     pub fn get_total_active_stake_decimal(&self) -> Decimal {
-        Decimal::from_scaled_val(self.total_active_stake_scaled)
+        Decimal::from_scaled_val(u128::from_le_bytes(self.total_active_stake_scaled))
     }
 
     pub fn get_total_pending_stake_decimal(&self) -> Decimal {
-        Decimal::from_scaled_val(self.total_pending_stake_scaled)
+        Decimal::from_scaled_val(u128::from_le_bytes(self.total_pending_stake_scaled))
     }
 
     pub fn set_total_active_stake_decimal(&mut self, value: Decimal) {
-        self.total_active_stake_scaled = value.to_scaled_val().unwrap();
+        self.total_active_stake_scaled = value.to_scaled_val::<u128>().unwrap().to_le_bytes();
     }
 
     pub fn set_total_pending_stake_decimal(&mut self, value: Decimal) {
-        self.total_pending_stake_scaled = value.to_scaled_val().unwrap();
+        self.total_pending_stake_scaled = value.to_scaled_val::<u128>().unwrap().to_le_bytes();
     }
 
     pub fn is_delegated(&self) -> bool {
@@ -214,8 +223,8 @@ impl Default for FarmState {
             deposit_warmup_period: 0,
             withdrawal_cooldown_period: 0,
 
-            total_active_stake_scaled: Decimal::zero().to_scaled_val().unwrap(),
-            total_pending_stake_scaled: Decimal::zero().to_scaled_val().unwrap(),
+            total_active_stake_scaled: Decimal::zero().to_scaled_val::<u128>().unwrap().to_le_bytes(),
+            total_pending_stake_scaled: Decimal::zero().to_scaled_val::<u128>().unwrap().to_le_bytes(),
             total_pending_amount: 0,
 
             slashed_amount_current: 0,
@@ -432,7 +441,7 @@ pub struct UserState {
     pub pending_deposit_stake_scaled: u128,
     pub pending_deposit_stake_ts: u64,
 
-    pub pending_withdrawal_unstake_scaled: u128,
+    pub pending_withdrawal_unstake_scaled: [u8; 16],
     pub pending_withdrawal_unstake_ts: u64,
     pub bump: u64,
     pub delegatee: Pubkey,
@@ -451,8 +460,12 @@ impl UserState {
         Decimal::from_scaled_val(self.pending_deposit_stake_scaled)
     }
 
+    pub fn get_pending_withdrawal_unstake_scaled(&self) -> u128 {
+        u128::from_le_bytes(self.pending_withdrawal_unstake_scaled)
+    }
+
     pub fn get_pending_withdrawal_unstake_decimal(&self) -> Decimal {
-        Decimal::from_scaled_val(self.pending_withdrawal_unstake_scaled)
+        Decimal::from_scaled_val(u128::from_le_bytes(self.pending_withdrawal_unstake_scaled))
     }
 
     pub fn get_rewards_tally_decimal(&self, index: usize) -> Decimal {
@@ -468,7 +481,7 @@ impl UserState {
     }
 
     pub fn set_pending_withdrawal_unstake_decimal(&mut self, value: Decimal) {
-        self.pending_withdrawal_unstake_scaled = value.to_scaled_val().unwrap();
+        self.pending_withdrawal_unstake_scaled = value.to_scaled_val::<u128>().unwrap().to_le_bytes();
     }
 
     pub fn set_rewards_tally_decimal(&mut self, index: usize, value: Decimal) {
@@ -493,7 +506,7 @@ impl Default for UserState {
             active_stake_scaled: Decimal::zero().to_scaled_val().unwrap(),
             pending_deposit_stake_scaled: Decimal::zero().to_scaled_val().unwrap(),
             pending_deposit_stake_ts: 0,
-            pending_withdrawal_unstake_scaled: Decimal::zero().to_scaled_val().unwrap(),
+            pending_withdrawal_unstake_scaled: Decimal::zero().to_scaled_val::<u128>().unwrap().to_le_bytes(),
             pending_withdrawal_unstake_ts: 0,
             bump: 0,
             delegatee: Pubkey::default(),
@@ -517,7 +530,7 @@ pub struct RewardInfo {
     pub last_issuance_ts: u64,
     pub rewards_issued_unclaimed: u64,
     pub rewards_issued_cumulative: u64,
-    pub reward_per_share_scaled: u128,
+    pub reward_per_share_scaled: [u8; 16],
     pub placeholder_0: u64,
 
     pub reward_type: u8,
@@ -529,11 +542,15 @@ pub struct RewardInfo {
 
 impl RewardInfo {
     pub fn get_reward_per_share_decimal(&self) -> Decimal {
-        Decimal::from_scaled_val(self.reward_per_share_scaled)
+        Decimal::from_scaled_val(self.get_reward_per_share_scaled())
     }
 
     pub fn set_reward_per_share_decimal(&mut self, value: Decimal) {
-        self.reward_per_share_scaled = value.to_scaled_val().unwrap();
+        self.reward_per_share_scaled = value.to_scaled_val::<u128>().unwrap().to_le_bytes();
+    }
+
+    pub fn get_reward_per_share_scaled(&self) -> u128 {
+        u128::from_le_bytes(self.reward_per_share_scaled)
     }
 }
 

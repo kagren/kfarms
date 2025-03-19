@@ -448,10 +448,10 @@ pub fn set_stake(
     ts: u64,
 ) -> Result<()> {
     assert_eq!(
-        farm_state.total_active_stake_scaled,
+        farm_state.get_total_active_stake_scaled(),
         u128::from(farm_state.total_staked_amount)
     );
-    assert_eq!(farm_state.total_pending_stake_scaled, 0);
+    assert_eq!(farm_state.get_total_pending_stake_scaled(), 0);
     assert_eq!(farm_state.total_pending_amount, 0);
     assert_eq!(farm_state.deposit_warmup_period, 0);
     assert_eq!(farm_state.withdrawal_cooldown_period, 0);
@@ -490,7 +490,7 @@ pub fn set_stake(
         };
     let diff_u128 = u128::from(diff);
 
-    op_u128(&mut farm_state.total_active_stake_scaled, diff_u128);
+    op_u128(&mut farm_state.get_total_active_stake_scaled(), diff_u128);
     op_u64(&mut farm_state.total_staked_amount, diff);
 
     op_u128(&mut user_state.active_stake_scaled, diff_u128);
@@ -499,7 +499,7 @@ pub fn set_stake(
         let reward_tally = &mut user_state.rewards_tally_scaled[i];
         let reward_info = &farm_state.reward_infos[i];
 
-        *reward_tally = reward_info.reward_per_share_scaled * u128::from(new_stake);
+        *reward_tally = reward_info.get_reward_per_share_scaled() * u128::from(new_stake);
     }
 
     Ok(())
@@ -558,10 +558,10 @@ pub fn user_refresh_reward(
     xmsg!(
         "farm_operations::user_refresh_reward reward_index {} Global stake {} User stake {} prev_reward_tally {} rpt {}",
         reward_index,
-        farm_state.total_active_stake_scaled,
+        farm_state.get_total_active_stake_scaled(),
         user_state.active_stake_scaled,
         user_state.rewards_tally_scaled[reward_index],
-        farm_state.reward_infos[reward_index].reward_per_share_scaled,
+        farm_state.reward_infos[reward_index].get_reward_per_share_scaled(),
     );
 
     let rewards_tally = user_state.get_rewards_tally_decimal(reward_index);
@@ -685,7 +685,7 @@ pub fn unstake(
         FarmError::NothingToUnstake
     );
 
-    if user_state.pending_withdrawal_unstake_scaled > 0 {
+    if user_state.get_pending_withdrawal_unstake_scaled() > 0 {
         if user_state.pending_withdrawal_unstake_ts <= ts {
             xmsg!("farm_operations::unstake pending withdrawal elapsed already exist but not withdrawn yet");
             return err!(FarmError::PendingWithdrawalNotWithdrawnYet);
@@ -747,7 +747,7 @@ pub fn withdraw_unstaked_deposits(
         FarmError::UnstakeNotElapsed
     );
     require!(
-        user_state.pending_withdrawal_unstake_scaled > 0,
+        user_state.get_pending_withdrawal_unstake_scaled() > 0,
         FarmError::NothingToWithdraw
     );
 
@@ -768,7 +768,7 @@ pub fn refresh_global_reward(
         return Ok(());
     }
 
-    if farm_state.total_active_stake_scaled == 0 {
+    if farm_state.get_total_active_stake_scaled() == 0 {
         farm_state.reward_infos[reward_index].last_issuance_ts = ts;
         return Ok(());
     }
@@ -857,7 +857,7 @@ pub fn refresh_global_reward(
             farm_state.reward_infos[reward_index].get_reward_per_share_decimal();
 
         let added_reward_per_share = if farm_state.is_delegated() {
-            Decimal::from(rewards) / farm_state.total_active_stake_scaled
+            Decimal::from(rewards) / farm_state.get_total_active_stake_scaled()
         } else {
             Decimal::from(rewards) / farm_state.get_total_active_stake_decimal()
         };
